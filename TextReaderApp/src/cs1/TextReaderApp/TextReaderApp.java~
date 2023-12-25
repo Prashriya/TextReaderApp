@@ -1,0 +1,633 @@
+
+package cs1.TextReaderApp;
+
+import  cs1.app.*;
+
+public class TextReaderApp
+{
+    void printArray( int[] array )
+    {
+        for (int i = 0; i < array.length; i = i++)
+        {
+            System.out.print(array[i] + " ");
+        }
+        System.out.println();
+    }
+    
+    void printArray( long[] array )
+    {
+        for (int i = 0; i < array.length; i = i++)
+        {
+            System.out.print(array[i] + " ");
+        }
+        System.out.println();
+    }
+
+    void printTable( int[][] table )
+    {
+        for (int r = 0; r < table.length; r++)      
+        {
+            printArray(table[r]);                       
+        }
+    }
+    
+    int[][] copyImage( int startRow, int startCol, int numRows, int numCols, int[][] bigImage )
+    {
+        //creating a new array
+        int[][] smallImage = new int [ numRows ][ numCols ];
+        
+        for( int row = startRow; row < startRow + numRows; row++ )
+        {
+            for( int col = startCol; col < startCol + numCols; col++ )
+            {
+                //storing the certain section of bigImage into smallImage
+                smallImage[ row - startRow ][ col - startCol ] = bigImage[ row ][ col ];
+            }
+        }
+        return smallImage;
+    }
+    
+    void pasteImage( int startRow, int startCol, int[][] bigImage, int[][] smallImage )
+    {  
+        for( int row = 0; row < smallImage.length; row ++ )
+        {
+            for( int col = 0; col < smallImage[ 0 ].length; col++ )
+            {
+                bigImage[ startRow + row ][ startCol + col ] = smallImage[ row ][ col ];
+            }
+        }
+    }
+    
+    //creating a logo using the phrase
+    int[][] createLogo( String phrase )
+    {
+        int count = 0;
+        int phraseLength = phrase.length();
+        
+        int startRow = 0;
+        int startCol = 0;
+        
+        int[][] bigImage = new int[ phraseLength * 25 ][ phraseLength * 23 ];
+        
+        //looping through each letter in the phrase
+        while( count < phraseLength )
+        {
+            char curLetter = phrase.charAt( count );
+            int[][] smallImage = canvas.readImage( curLetter + ".png" );
+            
+            pasteImage(startRow, startCol, bigImage, smallImage);
+            
+            //updating start position for next letter
+            startRow += 25;
+            startCol += 23;
+            
+            count++;
+        }
+        
+        return bigImage;
+    }
+
+    //computing absolute difference between two images
+    long computeDifference( int[][] image1, int[][] image2 )
+    {
+        long sum = 0;
+        
+        for( int i = 0; i < image1.length; i++ )
+        {
+            for( int j = 0; j < image1[ 0 ].length; j++ )
+            {
+                sum += Math.abs( image1[ i ][ j ] - image2[ i ][ j ] );
+            }
+        }
+        return sum;
+    }
+    
+    //finding minimum difference between a smallImage and all possible sections in a bigImage
+    long findMinDifference( int[][] bigImage, int[][] smallImage )
+    {
+        long minValue = Long.MAX_VALUE;
+        
+        for( int i = 0; i < bigImage.length - ( smallImage.length - 1 ); i++ )
+        {
+            for( int j = 0; j < bigImage[ 0 ].length - ( smallImage[ 0 ].length - 1 ); j++ )
+            {
+                int[][] newSection = copyImage( i, j, smallImage.length, smallImage[ 0 ].length, bigImage );
+                
+                long diff = computeDifference( newSection, smallImage );
+                
+                if( diff < minValue )
+                {
+                    minValue = diff;
+                } 
+            }
+        }
+        return minValue;
+    }
+    
+    long[] findLetterScores( int[][] image )
+    {
+        String alphabet = "abcdefghijklmnopqrstuvwxyz";
+        
+        long[] result = new long[ alphabet.length() ];
+        
+        for( int i = 0; i < alphabet.length(); i++ )
+        {
+            char curLetter = alphabet.charAt( i );
+            int[][] letterImage = canvas.readImage( curLetter + ".png" );
+            
+            result[ i ] = findMinDifference( image, letterImage );
+        }
+        return result;
+    }
+    
+    int findMinValueIndex( long[] data )
+    {
+        int minIndex = 0;
+        
+        for( int i = 1; i < data.length; i++ )
+        {
+            if( data[ i ] < data[ minIndex ] )
+            {
+                minIndex = i;
+            }
+        }
+        
+        return minIndex;
+    }
+    
+    String findLetters( int[][] image )
+    {
+        String alphabet = "abcdefghijklmnopqrstuvwxyz";
+        String result = "";
+        
+        int numObjects = countObjects( image );
+
+        long[] letterScores = findLetterScores( image );
+        
+        for( int i = 0; i < numObjects; i++ )
+        {
+            int minIndex = findMinValueIndex( letterScores );
+            letterScores[ minIndex ] = Long.MAX_VALUE;
+
+            char minLetter = alphabet.charAt( minIndex );
+            result += minLetter;        
+        }
+
+        return result;
+    }
+    
+    int countObjects( int[][] image )
+    {
+        int count = 0;
+        
+        for( int row = 1; row < image.length - 1; row++ )
+        {
+            for( int col = 1; col < image[ 0 ].length - 1; col++ )
+            {
+                if( image[ row ][ col ] != 0 )
+                {
+                    if( image[ row - 1 ][ col - 1 ] == 0 && image[row - 1][ col ] == 0 && image [ row - 1 ][ col + 1 ] == 0 && image[ row ][ col -1 ] == 0 )
+                    {
+                        count++;
+                    }
+                    else if( image[ row - 1 ][ col ] == 0 && image[ row - 1 ][ col + 1 ]  != 0 && image[ row ][ col - 1 ] != 0 )
+                    {
+                        count--; 
+                    }
+                    else if( image[ row - 1 ][ col - 1 ] != 0 && image[ row - 1 ][ col ] == 0 && image[ row - 1 ][ col + 1 ] != 0 )
+                    {
+                        count--;
+                    }
+                }
+            }
+        }
+        return count;
+    }
+    
+    void traceContour( int startRow, int startCol, int[][] image )
+    {
+        int curRow = startRow;
+        int curCol = startCol;
+        
+        int dr = 0;
+        int dc = 1;
+        
+        do
+        {
+            if( image[ curRow ][ curCol ] == 0 )
+            {
+                int temp = dr;
+                dr = dc;
+                dc = -temp;
+                
+                curRow += dr;
+                curCol += dc;
+            }
+            else
+            {
+                image[ curRow ][ curCol ] = 0x00FF0000;
+                
+                int temp = dr;
+                dr = -dc;
+                dc = temp;
+                
+                curRow += dr;
+                curCol += dc;
+            }
+        }
+        while( curRow != startRow || curCol != startCol );
+    }
+    
+    void traceAllContours( int[][] image )
+    {
+        for( int row = 1; row < image.length - 1; row++ )
+        {
+            for( int col = 1; col < image[ 0 ].length - 1; col++ )
+            {
+                if( image[ row ][ col ] != 0 && image[ row ][ col - 1 ] == 0 )
+                {
+                    traceContour( row, col, image );
+                }
+            }
+        }
+    }
+    
+    //adding noise to the image
+    void addNoise( int[][] image, int level )
+    {
+        int newInt = canvas.getRandomInt( 0, 100 );
+        
+        for( int row = 1; row < image.length - 1; row++ )
+        {
+            for( int col = 1; col < image[ 0 ].length - 1; col++ )
+            {
+                if( image[ row ][ col ] != 0 )
+                {
+                    if( image[ row ][ col - 1 ] == 0 && image[ row ][ col + 1 ] != 0 && image[ row + 1 ][ col ] != 0 && image[ row - 1 ][ col ] != 0 )
+                    {
+                        if( newInt < level )
+                        {
+                            image[ row ][ col ] = 0;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    void runTextApp()
+    {
+        int[][] mainImage = createLogo( "cat" );   
+        String choice = "";                        
+        
+        double centerX = canvas.getWidth() / 2;
+        double centerY = canvas.getHeight() / 2;
+        
+        while ( choice.equals("Quit") == false )   // as long as choice is not "Quit"
+        {
+            canvas.drawImage( canvas.getWidth() / 2, canvas.getHeight() / 2, mainImage );
+            Touch touch = canvas.waitForTouch();
+        
+            canvas.clear();
+            choice = canvas.readSelection( "Choose your option!", "Load Image", "Create Logo", "Count Regions", "Trace Contours", "Transcribe Text", "Add Noise", "Quit" );
+            
+            if ( choice.equals( "Load Image" ) == true )
+            {
+                String fileName = canvas.readString( "Enter a file name: " );
+                mainImage = canvas.readImage( fileName + ".png" );
+            }
+            if ( choice.equals( "Create Logo" ) == true )
+            {
+                String phrase = canvas.readString( "Enter a phrase: " );
+                mainImage = createLogo( phrase );
+            }
+            if ( choice.equals( "Count Regions" ) == true )
+            {
+                int regions = countObjects( mainImage );
+                canvas.drawText( centerX, 20, "Number of objects: " + regions, "blue" );
+            }
+            if ( choice.equals( "Trace Contours" ) == true )
+            {
+                traceAllContours( mainImage );
+                canvas.drawImage( centerX, centerY, mainImage );
+            }
+            if ( choice.equals( "Transcribe Text" ) == true )
+            {
+                String letters = findLetters( mainImage );
+                canvas.drawText( centerX, 20, "The letters are: " + letters, "blue" );
+            }
+            if ( choice.equals( "Add Noise" ) == true )
+            {
+                int level = canvas.readInt( "Enter the noise level: " );
+                addNoise( mainImage, level );
+                canvas.drawImage( centerX, centerY, mainImage );
+            }
+        }
+    }
+    
+    public void run()
+    {
+        /*
+        int[][] image = {
+            { 10, 11, 12, 13 },
+            { 14, 15, 16, 17 },
+            { 18, 19, 20, 21 } };
+
+        int[][] image1 = copyImage( 0, 0, 2, 2, image );
+        printTable( image1 );
+        
+        int[][] image2 = copyImage( 1, 2, 2, 2, image );
+        printTable( image2 );  
+        
+        int[][] image3 = copyImage( 0, 0, 3, 4, image );
+        printTable( image3 ); 
+        */
+        
+        //int[][] scene = canvas.readImage( "scene1.png" );
+        //int[][] sun = copyImage( 10, 6, 154, 171, scene );
+        //canvas.drawImage( 180, 328, sun );
+        
+        //int[][] scene = canvas.readImage( "scene1.png" );
+        //int[][] smiley = copyImage( 260, 181, 115, 115, scene );
+        //canvas.drawImage( 180, 328, smiley );
+        
+        //int[][] scene = canvas.readImage( "scene1.png" );
+        //int[][] cloud = copyImage( 121, 185, 81, 109, scene );
+        //canvas.drawImage( 180, 328, cloud );
+        
+        //int[][] letterQ = canvas.readImage( "q.png" );
+        //int[][] copyQ = copyImage( 0, 0, 25, 23, letterQ );
+        //canvas.drawImage( 180, 328, copyQ );
+        
+        /*
+        int[][] image1 = {
+            { 10, 11, 12, 13 },
+            { 14, 15, 16, 17 },
+            { 18, 19, 20, 21 } };
+
+        int[][] image2 = {
+            { 30, 31 },
+            { 32, 33 } };
+
+        pasteImage( 0, 0, image1, image2 );
+        printTable( image1 );
+
+        pasteImage( 1, 2, image1, image2 );
+        printTable( image1 );
+        
+        //int[][] scene = canvas.readImage( "scene1.png" );
+        //int[][] letterS = canvas.readImage( "s.png" );
+        //int[][] letterC = canvas.readImage( "c.png" );
+        //pasteImage( 74, 80, scene, letterS );
+        //pasteImage( 149, 227, scene, letterC );
+        //canvas.drawImage( 180, 328, scene );
+        
+        int[][] letterS = canvas.readImage( "s.png" );
+        int[][] letterC = canvas.readImage( "c.png" );
+        pasteImage( 0, 0, letterC, letterS );
+        canvas.drawImage( 180, 328, letterC );
+        */
+        
+        //int[][] gburgImage = createLogo( "gbcs" );
+        //canvas.drawImage( 180, 328, gburgImage );
+        
+        //int[][] image1 = { { 10, 11, 12, 13 },
+           // { 14, 15, 16, 17 },
+           // { 18, 19, 20, 21 } };
+
+        //int[][] image2 = copyImage( 1, 0, 2, 3, image1 );
+        //printTable( image2 );
+        /*
+        int[][] image1 = { { 10, 11, 12, 13 },
+            { 14, 15, 16, 17 },
+            { 18, 19, 20, 21 } };
+
+        int[][] image2 = { { 31, 32 },
+            { 33, 34 },
+            { 35, 36 } };
+
+        pasteImage( 0, 2, image1, image2 );
+        printTable( image1 );
+        */
+        
+        //int[][] gburgImage = createLogo( "gbcs" );
+        //canvas.drawImage( 180, 328, gburgImage );
+        
+        /*
+        int[][] image1 = {
+            { 1, 2, 3, 4 },
+            { 5, 6, 7, 8 } };
+          
+        int[][] image2 = {
+            { 8, 7, 6, 5 },
+            { 4, 3, 2, 1 } };
+           
+        long diff = computeDifference( image1, image2 );
+        System.out.println( "difference is: " + diff );
+        
+        int[][] letterQ = canvas.readImage( "q.png" );
+        int[][] letterX = canvas.readImage( "x.png" );
+        int[][] letterO = canvas.readImage( "o.png" );
+
+        diff = computeDifference( letterQ, letterQ );
+        System.out.println( "Q - Q is: " + diff );              
+
+        diff = computeDifference( letterX, letterQ );
+        System.out.println( "X - Q is: " + diff );              
+
+        diff = computeDifference( letterQ, letterX );
+        System.out.println( "Q - X is: " + diff );              
+
+        diff = computeDifference( letterO, letterQ );
+        System.out.println( "O - Q is: " + diff );              
+
+        diff = computeDifference( letterQ, letterO );
+        System.out.println( "Q - O is: " + diff );              
+        */
+        
+        /*
+        int[][] image = {
+            { 10, 11, 12, 13 },
+            { 14, 15, 16, 17 },
+            { 18, 19, 20, 21 } };
+    
+        int[][] image1 = {
+            { 16, 14 },
+            { 17, 20 } };
+
+        int[][] image2 = {
+            { 16, 17 },
+            { 21, 20 } };
+
+        long diff = findMinDifference( image, image1 );
+        System.out.println( "min difference is: " + diff );     
+
+        diff = findMinDifference( image, image2 );
+        System.out.println( "min difference is: " + diff );
+        */
+        
+        /*
+        int[][] quartzImage = canvas.readImage( "quartz1.png" );
+
+        int[][] qImage = canvas.readImage( "q.png" );
+        long diff = findMinDifference( quartzImage, qImage );
+        System.out.println( "min( Q - QUARTZ ) is: " + diff );         
+
+        int[][] rImage = canvas.readImage( "r.png" );
+        diff = findMinDifference( quartzImage, rImage );
+        System.out.println( "min( R - QUARTZ ) is: " + diff );       
+
+        int[][] oImage = canvas.readImage( "o.png" );
+        diff = findMinDifference( quartzImage, oImage );   
+        System.out.println( "min( O - QUARTZ ) is: " + diff );        
+        int[][] yImage = canvas.readImage( "y.png" );
+        diff = findMinDifference( quartzImage, yImage );      
+        System.out.println( "min( Y - QUARTZ ) is: " + diff );         
+
+        int[][] wImage = canvas.readImage( "w.png" );
+        diff = findMinDifference( quartzImage, wImage );     
+        System.out.println( "min( W - QUARTZ ) is: " + diff );         
+        */
+        
+        //int[][] taxiImage = canvas.readImage( "taxi1.png" );
+        //long[] scores = findLetterScores( taxiImage );
+        //printArray( scores );
+        
+        //int minIndex = findMinValueIndex( scores );
+        //System.out.println( "Min Index: " + minIndex );
+        
+        /*
+        long[] scores = { 4, 5, 7, 9, 22, 1, 6 };
+        
+        int minIndex = findMinValueIndex( scores );
+        System.out.println( "Min Index: " + minIndex );
+        */
+        
+        /*
+        int[][] taxiImage = canvas.readImage( "taxi1.png" );
+
+        String letters = findLetters( taxiImage, 4 );
+        System.out.println( "top 4 letters in taxi1.png are " + letters );    
+
+        letters = findLetters( taxiImage, 3 );             
+        System.out.println( "top 3 letters in taxi1.png are " + letters );   
+
+        letters = findLetters( taxiImage, 1 );             
+        System.out.println( "top 1 letters in taxi1.png are " + letters );    
+
+        int[][] taxiTiltedImage = canvas.readImage( "taxi2.png" );
+
+        letters = findLetters( taxiTiltedImage, 4 );             
+        System.out.println( "top 4 letters in taxi2.png are " + letters ); 
+        
+        int[][] quartzImage = canvas.readImage( "quartz1.png" );
+
+        letters = findLetters( quartzImage, 6 );             
+        System.out.println( "top 6 letters in quartz1.png are " + letters );    
+
+        letters = findLetters( quartzImage, 5 );
+        System.out.println( "top 5 letters in quartz1.png are " + letters ); 
+        
+        letters = findLetters( quartzImage, 1 );
+        System.out.println( "top 1 letters in quartz1.png are " + letters );    
+
+        int[][] quartzTiltedImage = canvas.readImage( "quartz2.png" );
+
+        letters = findLetters( quartzTiltedImage, 6 );
+        System.out.println( "top 6 letters in quartz2.png are " + letters );    
+        */
+        
+        /*
+        int[][] scene = canvas.readImage( "scene1.png" );
+        int count = countObjects( scene );
+        System.out.println("#objects in scene = " + count);
+        
+        int[][] wImage = canvas.readImage( "w.png" );
+        count = countObjects( wImage );
+        System.out.println("#objects in image of W = " + count);
+        */
+        /*
+        int[][] image = {
+            { 0,   0,   0,   0, 0 },
+            { 0, 255, 255, 255, 0 },
+            { 0, 255, 255, 255, 0 },
+            { 0, 255, 255, 255, 0 },
+            { 0,   0,   0,   0, 0 } };
+          
+        traceContour( 2, 1, image );
+        printTable( image );
+        */
+        
+        //int[][] scene = canvas.readImage( "scene1.png" );
+        //traceContour( 255, 70, scene );
+        //canvas.drawImage( 180, 328, scene );
+        
+        //int[][] scene = canvas.readImage( "scene1.png" );
+        //traceContour( 284, 191, scene );
+        //canvas.drawImage( 180, 328, scene );
+        
+        //int[][] scene = canvas.readImage( "scene1.png" );
+        //traceContour( 281, 33, scene );
+        //canvas.drawImage( 180, 328, scene );
+        
+        //int[][] letterA = canvas.readImage( "a.png" );
+        //traceContour( 2, 9, letterA );
+        //canvas.drawImage( 180, 328, letterA );
+        
+        /*
+        int[][] image = {
+            { 0,   0,   0,   0,   0,   0,   0 },
+            { 0, 255, 255,   0,   0,   0,   0 },
+            { 0, 255, 255,   0, 255, 255,   0 },
+            { 0,   0,   0,   0, 255, 255,   0 },
+            { 0,   0,   0,   0,   0,   0,   0 } };
+          
+        traceAllContours( image );
+        printTable( image );
+        
+        //int[][] scene = canvas.readImage( "scene1.png" );
+        //traceAllContours( scene );
+        //canvas.drawImage( 180, 328, scene );
+        
+        int[][] letterQ = canvas.readImage( "q.png" );
+        traceAllContours( letterQ );
+        canvas.drawImage( 180, 328, letterQ );
+        */
+        
+        /*
+        //findLetters without numObjects
+        int[][] taxiImage = canvas.readImage( "taxi1.png" );
+
+        String letters = findLetters( taxiImage );
+        System.out.println( "letters in taxi1.png are " + letters );    
+
+        int[][] taxiTiltedImage = canvas.readImage( "taxi2.png" );
+
+        letters = findLetters( taxiTiltedImage );             
+        System.out.println( "letters in taxi2.png are " + letters ); 
+        
+        int[][] quartzImage = canvas.readImage( "quartz1.png" );
+
+        letters = findLetters( quartzImage );             
+        System.out.println( "letters in quartz1.png are " + letters );    
+
+        int[][] quartzTiltedImage = canvas.readImage( "quartz2.png" );
+
+        letters = findLetters( quartzTiltedImage );
+        System.out.println( "letters in quartz2.png are " + letters );    
+        
+        */
+        /*
+        int[][] image = {
+            { 0,   0,   0,   0, 0 },
+            { 0, 0, 1, 255, 0 },
+            { 0, 0, 1, 1, 0 },
+            { 0, 255, 1, 255, 0 },
+            { 0,   0,   0,   0, 0 } };
+        addNoise( image, 10 );
+        printTable( image );
+        */
+        
+        runTextApp();
+    }
+}
